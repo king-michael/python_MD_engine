@@ -41,6 +41,8 @@ simulation.add_pair_style( pyMD.LennardJones(epsilon=2, sigma=3.5, cutoff=11) )
 simulation.add_reporter( pyMD.InMemoryTrajectoryReporter(n_dump=1000) )
 simulation.add_reporter( pyMD.InMemoryThermodynamicsReporter(n_dump=1000) )
 
+# visualzie with :  vmd -lammpstrj test.lammpstrj
+simulation.add_reporter( pyMD.LammpsTrajectoryReporter('test.lammpstrj', n_dump=1000))
 #===================================================================#
 # run the simulation
-simulation.run(int(1e6))
+simulation.run(int(1e5))

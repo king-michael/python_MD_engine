@@ -60,6 +60,7 @@ class Simulation():
     def add_reporter(self, reporter):
         debug("add reporter")
         reporter.connect(self)
+        reporter.setup()
         self.reporters.append(reporter)
 
     def _init_step(self):
@@ -93,6 +94,8 @@ class Simulation():
     def run(self, n_steps):
         if not self.initialized:
             self._init_step()
+            for reporter in self.reporters:
+                reporter.report(0)
 
         self.nflag = True
         nn_every = self.neigh.every
