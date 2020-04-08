@@ -38,8 +38,8 @@ simulation = pyMD.Simulation(
 )
 simulation.set_integrator( pyMD.VelocityVerletIntegrator(1.0) )
 simulation.add_pair_style( pyMD.LennardJones(epsilon=2, sigma=3.5, cutoff=11) )
-simulation.add_reporter( pyMD.PositionMonitor(n_dump=1000) )
-simulation.add_reporter( pyMD.ThermodynamicsReporter(n_dump=1000) )
+simulation.add_reporter( pyMD.InMemoryTrajectoryReporter(n_dump=1000) )
+simulation.add_reporter( pyMD.InMemoryThermodynamicsReporter(n_dump=1000) )
 
 #===================================================================#
 # run the simulation
