@@ -1,6 +1,11 @@
 import numpy as np
-from .neighborlist import NeighborList
+from functools import wraps
 
+from .neighborlist import NeighborList
+from .minimizer import Minimizer, SimpleMinimizer
+from .reporters.base import Reporter
+from .integrators import Integrator
+from .pair_styles import PairStyle
 
 def debug(*args, **kwargs):
     print(*args, **kwargs)
@@ -29,6 +34,7 @@ class Simulation():
 
         self.timestep = timestep
 
+        self.set_minimizer(SimpleMinimizer(n_dump=100))
         # CUSTOM
 
         self.pair_styles = []
@@ -36,38 +42,65 @@ class Simulation():
 
         self.initialized = False
 
-    def init_forces(self):
+    def _init_forces(self):
         debug("Init Forces")
         for pair_style in self.pair_styles:
             pair_style.connect(self)
 
-    def init_neighborlist(self):
+    def _init_neighborlist(self):
         debug("Init Neighborlist")
         self.neigh = NeighborList(self.positions, self.box,
                                   pair_cutoffs=[f.cutoff for f in self.pair_styles])
 
-    def add_pair_style(self, pair_style):
+    def add_pair_style(self, pair_style: PairStyle):
         debug("add pair_style")
         self.pair_styles.append(pair_style)
+        return self
 
-    def set_integrator(self, integrator):
+    def set_integrator(self, integrator: Integrator):
         "Sets the integrator"
         debug("set integrator")
         self.integrator = integrator
-        self.integrator.connect(self.positions, self.velocities, self.masses)
+        self.integrator.connect(self)
         self.integrator.setup()
+        return self
 
-    def add_reporter(self, reporter):
+    def minimize(self,
+                 max_iter: int=100,
+                 etol: float=1e-4,
+                 ftol: float=1e-6):
+        raise NotImplementedError("No Minimizer set")
+        #print(self.minimizer.minimize)
+        #self.minimizer.minimize(max_iter, etol, ftol)
+
+    def set_minimizer(self, minimzer: Minimizer):
+        debug("set minimizer")
+        self.minimizer = minimzer
+        self.minimizer.connect(self)
+        self.minimizer.setup()
+
+        def wrapped_minimze(f):
+            @wraps(f)
+            def wrapper(*args, **kwargs):
+                f(*args, **kwargs)
+                return self
+            return wrapper
+        self.minimize = wrapped_minimze(self.minimizer.minimize)
+
+        return self
+
+    def add_reporter(self, reporter: Reporter):
         debug("add reporter")
         reporter.connect(self)
         reporter.setup()
         self.reporters.append(reporter)
+        return self
 
     def _init_step(self):
-        self.init_neighborlist()
+        self._init_neighborlist()
         self.neigh.build_neighborlist()
 
-        self.init_forces()
+        self._init_forces()
 
         self.initialized = True
 
@@ -94,13 +127,15 @@ class Simulation():
     def run(self, n_steps):
         if not self.initialized:
             self._init_step()
-            for reporter in self.reporters:
-                reporter.report(0)
+
+        for reporter in self.reporters:
+            reporter.report(0)
 
         self.nflag = True
         nn_every = self.neigh.every
         reporter_every_min = min(r.n_dump for r in self.reporters)
-
+        print("Run {} steps".format(n_steps))
+        print("Step : {:10d} / {} ({:6.2f}%)".format(0, n_steps, 0.0), end='', flush=True)
         for step in range(1, n_steps + 1):
 
             if not step % 1000:
@@ -117,3 +152,5 @@ class Simulation():
                 for reporter in self.reporters:
                     if not step % reporter.n_dump:
                         reporter.report(step)
+
+        return self
