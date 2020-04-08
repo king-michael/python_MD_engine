@@ -12,6 +12,7 @@ class Integrator:
         self.velocities = enigne.velocities
         self.masses = enigne.masses
         self.forces = enigne.forces
+        enigne.dt =self.dt
 
     @abstractmethod
     def setup(self):

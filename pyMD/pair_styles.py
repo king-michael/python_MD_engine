@@ -20,9 +20,8 @@ class PairStyle:
 
     def fix_pbc(self, delx, ghost_images):
         img = self.neigh.convert_ghostimage_to_3d(ghost_images)
-        delx -= img[:, 0] * self.box[0]
-        delx -= img[:, 1] * self.box[1]
-        delx -= img[:, 2] * self.box[2]
+        delx -= np.dot(img, self.box)
+
 
     def setup(self):
         # setup variables, reimplement if needed
@@ -69,20 +68,22 @@ class LennardJones(PairStyle):
             n_local = self.n_locals[i]
             if n_local > 0:
                 neighbors = self.neighborlist[i, :n_local]
-
                 delx = xtmp - self.positions[neighbors]
-                # self.fix_pbc(delx, self.ghost_images[i, :n_local])
 
-                rsq = np.sum(np.power(delx, 2))
-                if rsq < self.cutsq:
-                    r2inv = 1.0 / rsq
+                self.fix_pbc(delx, self.ghost_images[i, :n_local])
+
+                rsq = np.sum(np.power(delx, 2), axis=1)
+                idx_in_cutoff = np.where(rsq < self.cutsq)[0]
+                if len(idx_in_cutoff) > 0:
+                    rsq = np.clip(rsq[idx_in_cutoff],1e-6,None)
+                    r2inv = 1.0 / rsq#[idx_in_cutoff]
                     r6inv = r2inv * r2inv * r2inv
 
                     forcelj = r6inv * (self.f_c12 * r6inv - self.f_c6)
                     forcelj *= r2inv
 
-                    forces[i] += (delx * forcelj)[0]
+                    forces[i] += np.sum( np.dot(forcelj,delx[idx_in_cutoff]) )
 
-                    forces[neighbors] -= delx * forcelj
+                    forces[neighbors[idx_in_cutoff]] -= np.dot(forcelj,delx[idx_in_cutoff])
 
                     self.pe += np.sum(r6inv * (self.c12 * r6inv - self.c6) - self.offset)

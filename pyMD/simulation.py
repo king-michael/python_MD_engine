@@ -2,7 +2,7 @@ import numpy as np
 from functools import wraps
 
 from .neighborlist import NeighborList
-from .minimizer import Minimizer, SimpleMinimizer
+from .minimizer import Minimizer, MonteCarloMinimizer
 from .reporters.base import Reporter
 from .integrators import Integrator
 from .pair_styles import PairStyle
@@ -34,7 +34,7 @@ class Simulation():
 
         self.timestep = timestep
 
-        self.set_minimizer(SimpleMinimizer(n_dump=100))
+        self.set_minimizer(MonteCarloMinimizer(n_dump=100, max_ds=0.02))
         # CUSTOM
 
         self.pair_styles = []
@@ -82,7 +82,8 @@ class Simulation():
         def wrapped_minimze(f):
             @wraps(f)
             def wrapper(*args, **kwargs):
-                f(*args, **kwargs)
+                reason = f(*args, **kwargs)
+                print('Criteria : {} reached'.format(reason))
                 return self
             return wrapper
         self.minimize = wrapped_minimze(self.minimizer.minimize)
@@ -139,7 +140,8 @@ class Simulation():
         for step in range(1, n_steps + 1):
 
             if not step % 1000:
-                print("\rStep : {:10d} / {} ({:6.2f}%)".format(step, n_steps, 100.0 * step / n_steps), end='',
+                pe = self.get_potential_energy()
+                print("\rStep : {:10d} / {} ({:6.2f}%) | pe : {}".format(step, n_steps, 100.0 * step / n_steps, pe), end='',
                       flush=True)
 
             # activate neighborlist build
