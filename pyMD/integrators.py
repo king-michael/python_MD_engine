@@ -6,26 +6,27 @@ class Integrator:
     def __init__(self, dt):
         self.dt = dt
 
-    def connect(self, positions, velocities, masses):
+    def connect(self, enigne):
         # connects integrator with engine
-        self.positions = positions
-        self.velocities = velocities
-        self.masses = masses
+        self.positions = enigne.positions
+        self.velocities = enigne.velocities
+        self.masses = enigne.masses
+        self.forces = enigne.forces
 
     @abstractmethod
     def setup(self):
         # setup variables
-        self.force = np.empty(self.velocities.shape, dtype=np.float32)
         pass
 
     @abstractmethod
     def initial_integrate(self):
-        self.velocities += self.dtfm * self.forces
-        self.positions += self.dtv * self.velocities
+        # before force evaluations
+        pass
 
     @abstractmethod
     def final_integrate(self):
-        self.velocities += self.dtfm * self.forces
+        # after force evaulations
+        pass
 
 
 class VelocityVerletIntegrator(Integrator):
@@ -35,16 +36,18 @@ class VelocityVerletIntegrator(Integrator):
         'metal': {'ftm2v': 9648.533823273016},
     }
 
-    def __init__(self, dt, units='LJ'):
-        self.dt = dt
+    def __init__(self, dt, units='real'):
+        super().__init__(dt)
+        self.set_unit_system(units)
+
+    def set_unit_system(self, units: str):
         try:
             self.ftm2v = self.constants[units]['ftm2v']
         except KeyError as e:
-            raise KeyError('"ftm2v" for Unit("") not found'.format(unit))
+            raise KeyError('"ftm2v" for Unit("") not found'.format(units))
 
     def setup(self):
         # setup variables
-        self.forces = np.zeros(self.velocities.shape, dtype=np.float64)
         self.dtv = self.dt
         self.dtf = 0.5 * self.dt * self.ftm2v
         self.dtfm = np.atleast_2d(self.dtf / self.masses).T
