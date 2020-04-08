@@ -8,14 +8,14 @@ import pyMD
 # Inputs
 
 box = np.array([
-    [26, 0, 0],
-    [0, 26, 0],
-    [0, 0, 26],
+    [30, 0, 0],
+    [0, 30, 0],
+    [0, 0, 30],
 ])
 
 positions = np.array([
-    [0, 0, 0],
-    [1, 0, 0],
+    [7, 0, 0],
+    [23, 0, 0],
 ], dtype=np.float64)
 
 velocities = np.array([
@@ -36,13 +36,14 @@ simulation = pyMD.Simulation(
     box=box,
     velocities=velocities
 )
-simulation.set_integrator( pyMD.VelocityVerletIntegrator(1.0) )
-simulation.add_pair_style( pyMD.LennardJones(epsilon=2, sigma=3.5, cutoff=11) )
+simulation.set_integrator( pyMD.VelocityVerletIntegrator(1.0, units='real') )
+simulation.add_pair_style( pyMD.LennardJones(epsilon=1e-3, sigma=3.5, cutoff=11) )
 simulation.add_reporter( pyMD.InMemoryTrajectoryReporter(n_dump=1000) )
 simulation.add_reporter( pyMD.InMemoryThermodynamicsReporter(n_dump=1000) )
 
 # visualzie with :  vmd -lammpstrj test.lammpstrj
 simulation.add_reporter( pyMD.LammpsTrajectoryReporter('test.lammpstrj', n_dump=1000))
 #===================================================================#
+
 # run the simulation
-simulation.run(int(1e5))
+simulation.run(int(1e6))
