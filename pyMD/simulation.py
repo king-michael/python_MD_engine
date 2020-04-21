@@ -50,7 +50,7 @@ class Simulation():
     def _init_neighborlist(self):
         debug("Init Neighborlist")
         self.neigh = NeighborList(self.positions, self.box,
-                                  pair_cutoffs=[f.cutoff for f in self.pair_styles])
+                                  pair_cutoffs=[f.cutoff for f in self.pair_styles], **self.nn_settings)
 
     def add_pair_style(self, pair_style: PairStyle):
         debug("add pair_style")
