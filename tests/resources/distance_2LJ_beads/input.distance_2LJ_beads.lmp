@@ -1,0 +1,65 @@
+###################################################################
+# System : 
+#  2 atoms in a box
+# Simulation :
+#  Shift atom2 from min_dist to boxsize-min_dist
+#  * calculate the potential energy
+#   * store the data in dump.lammpstrj.gz
+
+variable boxsize equal 30
+variable step_size equal 0.1
+variable min_dist equal 0.4
+
+units lj
+timestep 0.005
+atom_style full
+atom_modify map array
+
+region box block 0 ${boxsize} 0 ${boxsize} 0 ${boxsize}
+create_box 1 box
+
+create_atoms 1 single 0.0 0.0 0.0
+create_atoms 1 single ${min_dist} 0.0 0.0
+
+mass 1 1.0
+
+velocity all set 0 0 0
+
+pair_style lj/cut 2.5
+pair_coeff 1 1 1.0 1.0 2.5
+
+neighbor 0.3 bin
+neigh_modify delay 0 every 1 check no
+
+
+# calculate number of loop steps and set up variable for the x position of atom2
+variable loop_steps equal round((${boxsize}-2*${min_dist})/${step_size}) # spacer on both sides
+variable i loop ${loop_steps} 
+variable x2 equal ${min_dist}+step*${step_size}
+
+
+# thermo output
+variable e2body    equal ebond+evdwl
+variable ecoul_tot equal ecoul+elong
+variable str_dbg string 'ebond eangle edihed eimp evdwl ecoul elong etail v_e2body v_ecoul_tot'
+thermo_style custom step temp pe etotal press vol ${str_dbg}
+
+# compute the per atom properties
+compute peatom all pe/atom
+dump 1 all custom/gz 1 dump.lammpstrj.gz id type x y z fx fy fz c_peatom
+
+# create step 0
+reset_timestep 0
+set atom 2 x ${x2}
+run 0 pre yes post no # force neighborlist rebuild
+
+# loop over the different positions
+label loop
+
+  reset_timestep $i
+  set atom 2 x ${x2}
+  run 0 pre yes post no # force neighborlist rebuild
+
+next i
+jump SELF loop
+
