@@ -75,15 +75,18 @@ class LennardJones(PairStyle):
                 rsq = np.sum(np.power(delx, 2), axis=1)
                 idx_in_cutoff = np.where(rsq < self.cutsq)[0]
                 if len(idx_in_cutoff) > 0:
-                    rsq = np.clip(rsq[idx_in_cutoff],1e-6,None)
-                    r2inv = 1.0 / rsq#[idx_in_cutoff]
+                    #rsq = np.clip(rsq[idx_in_cutoff], 1e-6, None)
+                    r2inv = 1.0 / rsq[idx_in_cutoff]
                     r6inv = r2inv * r2inv * r2inv
 
                     forcelj = r6inv * (self.f_c12 * r6inv - self.f_c6)
                     forcelj *= r2inv
 
-                    forces[i] += np.sum( np.dot(forcelj,delx[idx_in_cutoff]) )
+                    forces[i] += np.matmul(forcelj, delx[idx_in_cutoff])
 
-                    forces[neighbors[idx_in_cutoff]] -= np.dot(forcelj,delx[idx_in_cutoff])
+                    forces[neighbors[idx_in_cutoff]] -= np.dot(forcelj, delx[idx_in_cutoff])
 
+                    # Not complete sure where the 0.5 comes from... as we already use newton
+                    # compared with LAMMPS -> 0.5*pe
+                    # compared with THEORY -> 1.0*pe
                     self.pe += np.sum(r6inv * (self.c12 * r6inv - self.c6) - self.offset)
