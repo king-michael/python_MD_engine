@@ -6,8 +6,8 @@
 #  * calculate the potential energy
 #   * store the data in dump.lammpstrj.gz
 
-variable boxsize equal 30
-variable step_size equal 0.1
+variable boxsize equal 6.0
+variable step_size equal 0.01
 variable min_dist equal 0.4
 
 units lj
@@ -47,6 +47,7 @@ thermo_style custom step temp pe etotal press vol ${str_dbg}
 # compute the per atom properties
 compute peatom all pe/atom
 dump 1 all custom/gz 1 dump.lammpstrj.gz id type x y z fx fy fz c_peatom
+dump_modify 1 format float "% 20.15f"
 
 # create step 0
 reset_timestep 0

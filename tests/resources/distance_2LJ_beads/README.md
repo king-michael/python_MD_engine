@@ -1,15 +1,21 @@
 # Info
 Short calculation with LAMMPS for two Lennard-Jones beads pulled apart
 
-* System : 2 atoms in a box
+* System : 
+  * 2 atoms in a box
+  * `box block 0 30 0 30 0 30`
 * Simulation :
   * Interactions:
     * `units lj`
+    * `timestep 0.005`
     * `mass 1 1.0`
     * `pair_style lj/cut 2.5`
     * `pair_coeff 1 1 1.0 1.0 2.5`
   * no integrator, no velocities
   * Shift `atom2` from `min_dist` to `boxsize-min_dist`
+    * `step_size` : `0.1`
+    * `min_dist` :  `0.4`
+    * `x : 0.4 -> 29.6`
     * calculate the potential energy
       * store the data in `dump.lammpstrj.gz`
 
