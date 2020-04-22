@@ -84,7 +84,7 @@ class LennardJones(PairStyle):
 
                     forces[i] += np.matmul(forcelj, delx[idx_in_cutoff])
 
-                    forces[neighbors[idx_in_cutoff]] -= np.dot(forcelj, delx[idx_in_cutoff])
+                    forces[neighbors[idx_in_cutoff]] -= np.multiply(np.atleast_2d(forcelj).T, delx[idx_in_cutoff])
 
                     # Not complete sure where the 0.5 comes from... as we already use newton
                     # compared with LAMMPS -> 0.5*pe
